@@ -2,11 +2,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap';
 import {WebAPI} from './web-api';
 import {inject} from 'aurelia-framework';
-import mapsapi from 'google-maps-api';
 
 @inject(WebAPI)
 export class App {
-    constructor(api, mapsapi) {
+    constructor(api) {
         this.api = api;
         this.planes = [];
         this.latitude = 37.323;

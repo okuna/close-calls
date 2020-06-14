@@ -1,9 +1,13 @@
 from __future__ import print_function
 import json
 import sys
+from math import radians, sin, cos, sqrt, asin
+
 from operator import add
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as PY
+from pyspark.sql.types import DoubleType
+
 
 from config import sql_password
 from config import sql_host
@@ -45,20 +49,18 @@ def explodeCosArr(row):
     output = []
     outCount = -1;
     latLongArr = row[3]
-    lat = lon = time = alt = compLat = compLon = compAlt = 0
+    lat = lon = time = alt = 0
     for i in range(len(latLongArr)):
         if i % 4 == 0:
             if (i != 0):
-                output.append( (row[0], row[1], alt, row[3], lat, lon, time, row[7], row[8], row[9], row[10], compLat, compLon, compAlt ))
+                output.append( (row[0], row[1], alt, row[3], lat, lon, time, row[7], row[8], row[9], row[10] ))
             lat = None
             if latLongArr[i]:
                 lat = latLongArr[i]
-                compLat = round(lat, 2)
         if i % 4 == 1: 
             lon = None
             if latLongArr[i]:
                 lon = latLongArr[i]
-                compLon = round(lon, 2)
         if i % 4 == 2: 
             time = None
             if latLongArr[i]:
@@ -68,8 +70,7 @@ def explodeCosArr(row):
             alt = None
             if latLongArr[i]:
                 alt = int(latLongArr[i])
-                compAlt = int(alt / 100)
-    output.append( (row[0], row[1], alt, row[3], lat, lon, time, row[7], row[8], row[9], row[10], compLat, compLon, compAlt ))
+    output.append( (row[0], row[1], alt, row[3], lat, lon, time, row[7], row[8], row[9], row[10] ))
     return output
 
 def searchForCollisions(row):
@@ -83,8 +84,11 @@ if __name__ == "__main__":
 
     spark = SparkSession\
         .builder\
-        .appName("CloseCalls")\
+        .appName("CloseCalls with join math")\
         .getOrCreate()
+
+    #register UDF 
+    udfCalcDistance = PY.udf(calcDistance, DoubleType())
 
     df = spark.read.json(sys.argv[1], multiLine=True).select('acList')
 
@@ -92,32 +96,34 @@ if __name__ == "__main__":
             .select("Icao", "Reg", "Alt", "Cos", "Lat", "Long", "PosTime", "Spd", "From", "To", "Call")\
             .dropna("any", None, ["Icao", "Reg", "Alt", "Lat", "Long", "PosTime", "Cos"])\
 
-    df.filter(df.Alt > 100)
+    df.filter(df.Alt > 1000)
 
     df.printSchema()
     df.show()
 
+    #expand Cos position into rows
     expandedMap = df.rdd.flatMap(explodeCosArr);
 
-    schema = df.schema\
-            .add("compLat", "double")\
-            .add("compLon", "double")\
-            .add("compAlt", "integer")\
-
+    #turn RDD back into DF and remove duplicated timestamps 
     explodedDf = spark.createDataFrame(expandedMap, df.schema)\
-        .select("Icao", "Reg", "Alt", "Lat", "Long", "PosTime", "Spd", "From", "To", "Call")\
-        .dropDuplicates(["Icao", "PosTime"])
+        .select("Icao", "Reg", "Alt", "Lat", "Long", "PosTime", "Spd", "From", "To", "Call" )\
+        .dropDuplicates(["Icao", "PosTime"])\
+        .dropna("any", None, ["Icao", "Reg", "Alt", "Lat", "Long", "PosTime"])
 
     explodedDf.show(100)
 
     d1 = explodedDf.alias("d1")
-    d2 = explodedDf.alias("d2")
-#    d2 = explodedDf.toDF("Reg2", "Alt2", "latitude2", "longitude2", "PosTime2", "Spd2", "From2", "To2", "compLat2", "compLon2", "compAlt2", "Call2")
-    joined_df = d1.join(d2, ((d1.PosTime == d2.PosTime)\
-            & (d1.compLon == d2.compLon)\
-            & (d1.compLat == d2.compLat)\
-            & (d1.compAlt == d2.compAlt)\
-            & (d1.Icao != d2.Icao)), 'inner')
+    d2 = explodedDf.toDF("_Icao", "_Reg", "_Alt", "_Lat", "_Long", "_PosTime", "_Spd", "_From", "_To", "_Call" )
+    joined_df = d1.join(d2, 
+              ((d1.PosTime == d2._PosTime )\
+            & (PY.abs(d1.Lat - d2._Lat) <= .01)\
+            & (PY.abs(d1.Long - d2._Long) <= .01)\
+            & (PY.abs(d1.Alt - d2._Alt) < 500)\
+            & (d1.Lat < d2._Lat)\
+            & (d1.Icao != d2._Icao)), 'inner')
+    joined_df = joined_df\
+        .withColumn("altDiff", (PY.abs(PY.col('Alt') - PY.col('_Alt'))))\
+        .withColumn("distDiff", udfCalcDistance( PY.col('Lat'), PY.col('Long'), PY.col('_Lat'), PY.col('_Long') ) )
 
     joined_df.show(100);
 

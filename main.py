@@ -11,11 +11,12 @@ from pyspark.sql.types import DoubleType
 
 from config import sql_password
 from config import sql_host
+from config import sql_username
 
 import pymysql
 import pandas as pd
 
-sql_username = 'root'
+ALT_FILTER = 1000
 
 def insertSql(df):
     df.write.format("jdbc")\
@@ -96,7 +97,7 @@ if __name__ == "__main__":
             .select("Icao", "Reg", "Alt", "Cos", "Lat", "Long", "PosTime", "Spd", "From", "To", "Call")\
             .dropna("any", None, ["Icao", "Reg", "Alt", "Lat", "Long", "PosTime", "Cos"])\
 
-    df.filter(df.Alt > 1000)
+    df.filter(df.Alt > ALT_FILTER)
 
     df.printSchema()
     df.show()
@@ -108,7 +109,8 @@ if __name__ == "__main__":
     explodedDf = spark.createDataFrame(expandedMap, df.schema)\
         .select("Icao", "Reg", "Alt", "Lat", "Long", "PosTime", "Spd", "From", "To", "Call" )\
         .dropDuplicates(["Icao", "PosTime"])\
-        .dropna("any", None, ["Icao", "Reg", "Alt", "Lat", "Long", "PosTime"])
+        .dropna("any", None, ["Icao", "Reg", "Alt", "Lat", "Long", "PosTime"])\
+        .filter(PY.col("Alt") > ALT_FILTER)
 
     explodedDf.show(100)
 
@@ -118,7 +120,7 @@ if __name__ == "__main__":
               ((d1.PosTime == d2._PosTime )\
             & (PY.abs(d1.Lat - d2._Lat) <= .01)\
             & (PY.abs(d1.Long - d2._Long) <= .01)\
-            & (PY.abs(d1.Alt - d2._Alt) < 500)\
+            & (PY.abs(d1.Alt - d2._Alt) < 1000)\
             & (d1.Lat < d2._Lat)\
             & (d1.Icao != d2._Icao)), 'inner')
     joined_df = joined_df\

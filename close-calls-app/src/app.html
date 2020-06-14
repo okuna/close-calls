@@ -4,6 +4,7 @@
 		<h1>Close Calls Webapp</h1>
         <google-map map-click.delegate="handleMapClick($event)" markers.bind="planes" api-key="AIzaSyAVGnyUqiZzVuFC6Wq9ExM57C1ZBM2Ce24" latitude.two-way="latitude" longitude.two-way="longitude" class="map"></google-map>
         <div if.bind="isLoading" class="loading-text">Loading...</div>
+        <div>found ${planes.length} points</div>
 
         
 	</div>

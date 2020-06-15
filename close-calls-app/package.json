@@ -15,9 +15,10 @@
     "aurelia-google-maps": "^2.3.0",
     "body-parser": "^1.19.0",
     "bootstrap": "^4.5.0",
-    "jquery": "^3.5.1",
     "load-google-maps-api": "^2.0.2",
-    "popper": "^1.0.1",
+    "jquery": "^3.5.1",
+    "moment": "^2.26.0",
+    "mysql": "^2.18.1",
     "popper.js": "^1.16.1"
   },
   "devDependencies": {

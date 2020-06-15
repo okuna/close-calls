@@ -24,7 +24,7 @@ def insertSql(df):
             .option("dbtable", "planes")\
             .option("driver", "com.mysql.cj.jdbc.Driver")\
             .option("user", sql_username)\
-            .option("password", sql_password).mode("append").save()
+            .option("password", sql_password).mode("overwrite").save()
 
 def calcDistance(lat1, lon1, lat2, lon2):
     '''
@@ -131,6 +131,6 @@ if __name__ == "__main__":
 
     joined_df.printSchema();
 
-    #insertSql(newDf)
+    insertSql(joined_df)
 
     spark.stop()

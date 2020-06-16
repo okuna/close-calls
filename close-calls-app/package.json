@@ -8,17 +8,17 @@
   },
   "license": "MIT",
   "dependencies": {
+    "aurelia": "^0.7.0",
     "aurelia-animator-css": "^1.0.4",
     "aurelia-bootstrapper": "^2.3.3",
     "aurelia-fetch-client": "^1.8.2",
     "aurelia-google-maps": "^2.3.0",
     "body-parser": "^1.19.0",
     "bootstrap": "^4.5.0",
-    "google-maps-api": "^2.0.1",
+    "load-google-maps-api": "^2.0.2",
     "jquery": "^3.5.1",
     "moment": "^2.26.0",
     "mysql": "^2.18.1",
-    "popper": "^1.0.1",
     "popper.js": "^1.16.1"
   },
   "devDependencies": {

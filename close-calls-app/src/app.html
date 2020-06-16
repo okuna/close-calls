@@ -1,10 +1,35 @@
 <template>
     <require from="./styles.css"></require>
 	<div class="container">
-		<h1>Close Calls Webapp</h1>
-        <google-map map-click.delegate="handleMapClick($event)" markers.bind="planes" api-key="AIzaSyAVGnyUqiZzVuFC6Wq9ExM57C1ZBM2Ce24" latitude.two-way="latitude" longitude.two-way="longitude" class="map"></google-map>
-        <div if.bind="isLoading" class="loading-text">Loading...</div>
-        <div>found ${planes.length} points</div>
+            <div class="page-map">
+                <h1>Close Calls Webapp</h1>
+                <google-map map-click.delegate="handleMapClick($event)" markers.bind="markers" api-key="AIzaSyAVGnyUqiZzVuFC6Wq9ExM57C1ZBM2Ce24" latitude.two-way="latitude" longitude.two-way="longitude" class="map"></google-map>
+            </div>
+
+            <div class="page-data">
+                <div if.bind="isLoading" class="loading-text">Loading...</div>
+                <div>found ${planes.length} close calls worldwide</div>
+                <table class="table">
+                    <tr>
+                        <th>Plane 1</th>
+                        <th>Alt (ft)</th>
+                        <th>Plane 2</th>
+                        <th>Alt (ft)</th>
+                        <th>Position</th>
+                        <th>Distance (km)</th>
+                        <th>Difference (ft)</th>
+                    </tr>
+                    <tr repeat.for="plane of planes">
+                        <td>${plane.Call} (${plane.Reg})</td>
+                        <td>${plane.Alt}</td>
+                        <td>${plane._Call} (${plane._Reg})</td>
+                        <td>${plane._Alt}</td>
+                        <td class="goLatLong" click.delegate="setLatLong(plane.Lat, plane.Long)">${plane.Lat}, ${plane.Long}</td>
+                        <td>${plane.distDiff.toFixed(2)}</td>
+                        <td>${plane.altDiff}</td>
+                    </tr>
+                </table>
+            </div>
 
         
 	</div>

@@ -1,3 +1,30 @@
-.map {
-    height: 600px;
+html {
+    height: 100%;
 }
+body {
+    max-height: 100%;
+    min-height: 100%;
+}
+.container {
+    max-height: 100%;
+    min-height: 100%;
+}
+.page-map {
+    height: 50vh;
+}
+.map {
+    height:calc(100% - 56px);
+}
+
+.page-data {
+    height: 50vh;
+    overflow: auto;
+}
+
+.goLatLong:hover {
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+}
+    
+

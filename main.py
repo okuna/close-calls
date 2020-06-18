@@ -6,6 +6,7 @@ from math import radians, sin, cos, sqrt, asin
 from operator import add
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as PY
+
 from pyspark.sql.types import DoubleType
 
 
@@ -21,7 +22,7 @@ ALT_FILTER = 1000
 def insertSql(df):
     df.write.format("jdbc")\
             .option("url", "jdbc:mysql://" + sql_host + "/airplanes")\
-            .option("dbtable", "planes")\
+            .option("dbtable", "close_calls")\
             .option("driver", "com.mysql.cj.jdbc.Driver")\
             .option("user", sql_username)\
             .option("password", sql_password).mode("append").save()
@@ -54,7 +55,7 @@ def explodeCosArr(row):
     for i in range(len(latLongArr)):
         if i % 4 == 0:
             if (i != 0):
-                output.append( (row[0], row[1], alt, row[3], lat, lon, time, row[7], row[8], row[9], row[10] ))
+                output.append( (row[0], row[1], alt, row[3], lat, lon, time, row[7], row[8], row[9], row[10], row[11] ))
             lat = None
             if latLongArr[i]:
                 lat = latLongArr[i]
@@ -71,12 +72,8 @@ def explodeCosArr(row):
             alt = None
             if latLongArr[i]:
                 alt = int(latLongArr[i])
-    output.append( (row[0], row[1], alt, row[3], lat, lon, time, row[7], row[8], row[9], row[10] ))
+    output.append( (row[0], row[1], alt, row[3], lat, lon, time, row[7], row[8], row[9], row[10], row[11] ))
     return output
-
-def searchForCollisions(row):
-    #search for collisions
-    print("hello")
             
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -91,31 +88,27 @@ if __name__ == "__main__":
     #register UDF 
     udfCalcDistance = PY.udf(calcDistance, DoubleType())
 
+    #read main file
     df = spark.read.json(sys.argv[1], multiLine=True).select('acList')
+    airportAltDf = spark.read.json('s3a://radar-data/airportsLatLon.json')
 
     df = df.select(PY.explode("acList").alias("tmp")).select("tmp.*")\
-            .select("Icao", "Reg", "Alt", "Cos", "Lat", "Long", "PosTime", "Spd", "From", "To", "Call")\
+            .select("Icao", "Reg", "Alt", "Cos", "Lat", "Long", "PosTime", "Spd", "Trak", "From", "To", "Call")\
             .dropna("any", None, ["Icao", "Reg", "Alt", "Lat", "Long", "PosTime", "Cos"])\
 
-    df.filter(df.Alt > ALT_FILTER)
-
-    df.printSchema()
-    df.show()
-
     #expand Cos position into rows
-    expandedMap = df.rdd.flatMap(explodeCosArr);
+    expandedMap = df.rdd.repartition(32).flatMap(explodeCosArr);
 
     #turn RDD back into DF and remove duplicated timestamps 
     explodedDf = spark.createDataFrame(expandedMap, df.schema)\
-        .select("Icao", "Reg", "Alt", "Lat", "Long", "PosTime", "Spd", "From", "To", "Call" )\
         .dropDuplicates(["Icao", "PosTime"])\
+        .drop("Cos")\
         .dropna("any", None, ["Icao", "Reg", "Alt", "Lat", "Long", "PosTime"])\
-        .filter(PY.col("Alt") > ALT_FILTER)
+        .filter(PY.col("Alt") > 500) #filter out planes below 500ft
 
-    explodedDf.show(100)
-
+    #self-join to detect planes with 0.01 degrees and 1000 ft
     d1 = explodedDf.alias("d1")
-    d2 = explodedDf.toDF("_Icao", "_Reg", "_Alt", "_Lat", "_Long", "_PosTime", "_Spd", "_From", "_To", "_Call" )
+    d2 = explodedDf.toDF("_Icao", "_Reg", "_Alt", "_Lat", "_Long", "_PosTime", "_Spd", "_Trak", "_From", "_To", "_Call" )
     joined_df = d1.join(d2, 
               ((d1.PosTime == d2._PosTime )\
             & (PY.abs(d1.Lat - d2._Lat) <= .01)\
@@ -125,12 +118,22 @@ if __name__ == "__main__":
             & (d1.Icao != d2._Icao)), 'inner')
     joined_df = joined_df\
         .withColumn("altDiff", (PY.abs(PY.col('Alt') - PY.col('_Alt'))))\
-        .withColumn("distDiff", udfCalcDistance( PY.col('Lat'), PY.col('Long'), PY.col('_Lat'), PY.col('_Long') ) )
+        .withColumn("distDiff", udfCalcDistance( PY.col('Lat'), PY.col('Long'), PY.col('_Lat'), PY.col('_Long') ) )\
 
-    joined_df.show(100);
+    #detect when close call is .1 deg away from airport
+    closeAirportDf = joined_df.join(airportAltDf,
+             ((PY.abs(joined_df.Lat - airportAltDf.lat) <= .1)\
+            & (PY.abs(joined_df.Long - airportAltDf.lon) <= .1)\
+            & (joined_df.Alt - airportAltDf.elevation <= 2000)), 'inner')
+    
+    #remove close calls near airport
+    joined_df = joined_df.join(closeAirportDf,
+            ((joined_df.Icao == closeAirportDf.Icao)\
+            &(joined_df._Icao == closeAirportDf._Icao)\
+            &(joined_df.PosTime == closeAirportDf.PosTime)), 'leftanti')
 
-    joined_df.printSchema();
+    joined_df.show(100)
 
-    insertSql(joined_df)
+    #insertSql(joined_df)
 
     spark.stop()

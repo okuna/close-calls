@@ -1,34 +1,40 @@
 <template>
     <require from="./styles.css"></require>
+        <google-map map-click.delegate="handleMapClick($event)" marker-click.delegate="handleMarkerClick($event)" markers.bind="markers" api-key="AIzaSyAVGnyUqiZzVuFC6Wq9ExM57C1ZBM2Ce24" latitude.two-way="latitude" longitude.two-way="longitude" zoom.bind="zoom" class="map"></google-map>
 	<div class="container">
-            <div class="page-map">
-                <h1>Close Calls Webapp</h1>
-                <google-map map-click.delegate="handleMapClick($event)" markers.bind="markers" api-key="AIzaSyAVGnyUqiZzVuFC6Wq9ExM57C1ZBM2Ce24" latitude.two-way="latitude" longitude.two-way="longitude" class="map"></google-map>
+            <div class="page-header">
+                <h1>Close Calls!</h1>
             </div>
 
             <div class="page-data">
-                <div if.bind="isLoading" class="loading-text">Loading...</div>
-                <div>found ${planes.length} close calls worldwide</div>
-                <table class="table">
-                    <tr>
-                        <th>Plane 1</th>
-                        <th>Alt (ft)</th>
-                        <th>Plane 2</th>
-                        <th>Alt (ft)</th>
-                        <th>Position</th>
-                        <th>Distance (km)</th>
-                        <th>Difference (ft)</th>
-                    </tr>
-                    <tr repeat.for="plane of planes">
-                        <td>${plane.Call} (${plane.Reg})</td>
-                        <td>${plane.Alt}</td>
-                        <td>${plane._Call} (${plane._Reg})</td>
-                        <td>${plane._Alt}</td>
-                        <td class="goLatLong" click.delegate="setLatLong(plane.Lat, plane.Long)">${plane.Lat}, ${plane.Long}</td>
-                        <td>${plane.distDiff.toFixed(2)}</td>
-                        <td>${plane.altDiff}</td>
-                    </tr>
-                </table>
+                <div class="map-info">
+                    <span if.bind="isLoading" class="loading-text">Loading...</span>
+                    Found ${planes.length} close calls worldwide. Click on a callsign or marker to see its expanded track. Click anywhere on the map to reset.
+                </div>
+                <div class="plane-table">
+                    <table class="table">
+                        <tr>
+                            <th>Plane 1</th>
+                            <th>Alt (ft)</th>
+                            <th>Plane 2</th>
+                            <th>Alt (ft)</th>
+                            <th>Position</th>
+                            <th>Distance (meters)</th>
+                            <th>Difference (feet)</th>
+                            <th>Points</th>
+                        </tr>
+                        <tr repeat.for="plane of planes">
+                            <td class="link-style" click.delegate="getPlaneHistory(plane)">${plane.Call} (${plane.Reg})</td>
+                            <td>${plane.Alt}</td>
+                            <td>${plane._Call} (${plane._Reg})</td>
+                            <td>${plane._Alt}</td>
+                            <td class="link-style" click.delegate="setLatLong(plane.Lat, plane.Long)">${plane.Lat}, ${plane.Long}</td>
+                            <td>${plane.Distance}</td>
+                            <td>${plane.Alt_Diff}</td>
+                            <td>${plane.NumPoints}</td>
+                        </tr>
+                    </table>
+                </div>
             </div>
 
         

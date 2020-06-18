@@ -13,6 +13,7 @@ export class App {
         this.latitude = 37.323;
         this.longitude = -122.0527;
         this.isLoading = false;
+        this.zoom = 8;
     }
 
     async created() {
@@ -31,29 +32,57 @@ export class App {
     async getPlanes(lat, lon) {
         this.isLoading = true;
         let planes = await this.api.call("getPlanes", {lat, lon});
-        let otherPlane = {};
         console.log(planes);
         this.isLoading = false;
+        this.setUpMarkers(planes);
+    }
+
+    setUpMarkers(planes) {
+        this.planes = [];
+        this.markers = [];
+        this.closePlanes = [];
+        let otherPlane = {};
         for (let plane of planes) {
             plane.latitude = plane.Lat;
             plane.longitude = plane.Long;
-            plane.label = plane.Call;
+            plane.Distance = Math.round(plane.Distance * 1000);
+            plane.title = plane.Call ? plane.Call : plane.Reg
+            otherPlane.title = plane._Call ? plane._Call : plane._Reg
             otherPlane.latitude = plane._Lat;
             otherPlane.longitude = plane._Long;
-            otherPlane.label = plane._Call;
             otherPlane.Icao = plane._Icao;
+            otherPlane._Icao = plane.Icao;
             otherPlane.Call = plane._Call;
             otherPlane.Reg = plane._Reg;
+            otherPlane.isOtherPlane = true;
             this.closePlanes.push(Object.assign({}, otherPlane));
         }
         this.planes = planes;
         this.markers = this.planes.concat(this.closePlanes);
-        console.log(this.markers)
+        console.log(this.markers);
+
     }
+
+    async getPlaneHistory(plane) {
+        this.isLoading = true;
+        let icao1 = plane.Icao;
+        let icao2 = plane._Icao;
+        if (plane.isOtherPlane) {
+            icao1 = plane._Icao;
+            icao2 = plane.Icao;
+        }
+            
+        let points = await this.api.call("getPlaneHistory", { icao1, icao2 });
+        this.isLoading = false;
+        this.setUpMarkers(points);
+        this.setLatLong(plane.latitude, plane.longitude);
+    }
+
 
     setLatLong (lat, lon) {
         this.latitude = lat;
         this.longitude = lon;
+        this.zoom = 12;
     }
 
     handleMapClick(event) {
@@ -61,5 +90,12 @@ export class App {
         this.latitude = latLng.lat();
         this.longitude = latLng.lng();
         this.refreshPlanes();
+    }
+
+    handleMarkerClick(event) {
+        console.log(event);
+        let plane = event.detail.marker;
+        this.getPlaneHistory(plane);
+
     }
 }

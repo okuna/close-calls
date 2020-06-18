@@ -23,9 +23,16 @@
   "platform": {
     "hmr": false,
     "open": false,
-    "port": 8080,
+    "port": 80,
     "host": "0.0.0.0",
     "output": "dist"
-  },
+  }, 
+  "dependencies": [
+    {
+	"name": "aurelia-google-maps",
+	"path": "../node_modules/aurelia-google-maps/dist/amd",
+	"main": "index"
+    }
+  ],
   "packageManager": "npm"
 }

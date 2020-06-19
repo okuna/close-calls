@@ -1,26 +1,42 @@
 <template>
     <require from="./styles.css"></require>
-        <google-map map-click.delegate="handleMapClick($event)" marker-click.delegate="handleMarkerClick($event)" markers.bind="markers" api-key="AIzaSyAVGnyUqiZzVuFC6Wq9ExM57C1ZBM2Ce24" latitude.two-way="latitude" longitude.two-way="longitude" zoom.bind="zoom" class="map"></google-map>
-	<div class="container">
-            <div class="page-header">
-                <h1>Close Calls!</h1>
-            </div>
+        <google-map map-click.delegate="handleMapClick($event)" marker-click.delegate="handleMarkerClick($event)" markers.bind="markers" api-key="AIzaSyAVGnyUqiZzVuFC6Wq9ExM57C1ZBM2Ce24" latitude.two-way="latitude" longitude.two-way="longitude" zoom.bind="zoom" map-type="TERRAIN" class="map"></google-map>
 
+            <div class="page-header">
+                <h1>Close Calls!   </h1>
+                <div class="tiny float-right">
+                    <div><a href="http://linkedin.com/in/keithokuna">linkedin</a></div>
+                    <div><a href="http://github.com/okuna/close-calls">github</a></div>
+                </div>
+            </div>
             <div class="page-data">
                 <div class="map-info">
                     <span if.bind="isLoading" class="loading-text">Loading...</span>
-                    Found ${planes.length} close calls worldwide. Click on a callsign or marker to see its expanded track. Click anywhere on the map to reset.
+                    Found ${planes.length} close calls ${mode}. Click on a callsign or marker to see its expanded track. Click anywhere on the map to reset.
+                    <div class="data-select">
+                        Data source:
+                        <select value.bind="selectedOption" change.delegate="refreshPlanes()" >
+                            <option repeat.for="option of dataOptions" model.bind="option">
+                                ${option.name} 
+                            </option>
+                        </select>
+                        <button class="btn btn-sm btn-primary float-right" click.delegate="clearPlanes()">clear data</button>
+                        <form submit.delegate="getPlaneByCall()">
+                            <input class="text" value.bind="lookup" blur.trigger="getPlaneByCall()" placeholder="lookup callsign or ICAO"></input>
+                        </form>
+                    </div>
                 </div>
                 <div class="plane-table">
                     <table class="table">
                         <tr>
-                            <th>Plane 1</th>
-                            <th>Alt (ft)</th>
-                            <th>Plane 2</th>
-                            <th>Alt (ft)</th>
+                            <th class="blue">Plane 1</th>
+                            <th class="blue">Alt (ft)</th>
+                            <th class="red">Plane 2</th>
+                            <th class="red">Alt (ft)</th>
                             <th>Position</th>
                             <th>Distance (meters)</th>
-                            <th>Difference (feet)</th>
+                            <th>Alt. Difference (feet)</th>
+                            <th>Time</th>
                             <th>Points</th>
                         </tr>
                         <tr repeat.for="plane of planes">
@@ -28,15 +44,14 @@
                             <td>${plane.Alt}</td>
                             <td>${plane._Call} (${plane._Reg})</td>
                             <td>${plane._Alt}</td>
-                            <td class="link-style" click.delegate="setLatLong(plane.Lat, plane.Long)">${plane.Lat}, ${plane.Long}</td>
+                            <td class="link-style" click.delegate="setLatLong(plane.Lat, plane.Long)">${plane.Lat.toFixed(4)}, ${plane.Long.toFixed(4)}</td>
                             <td>${plane.Distance}</td>
                             <td>${plane.Alt_Diff}</td>
+                            <td>${plane.time}</td>
                             <td>${plane.NumPoints}</td>
                         </tr>
                     </table>
                 </div>
             </div>
-
         
-	</div>
 </template>

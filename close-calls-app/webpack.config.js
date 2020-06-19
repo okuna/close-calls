@@ -123,7 +123,9 @@ module.exports = ({ production } = {}, {extractCss, analyze, tests, hmr, port, h
     port: port || project.platform.port,
     host: host,
     allowedHosts: [
-	'.amazonaws.com'
+	'.amazonaws.com',
+	'.datasite.xyz',
+	'.okuna.org'
     ]
   },
   devtool: production ? 'nosources-source-map' : 'cheap-module-eval-source-map',

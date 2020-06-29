@@ -20,6 +20,9 @@ body {
     background: white;
 
 }
+button {
+    margin-right: 10px;
+}
 .tiny {
     display: inline;
     font-size: medium;
@@ -37,6 +40,10 @@ form {
     height:100%;
     width: 100%;
     z-index: .1;
+}
+
+a {
+    color: black;
 }
 
 .page-data {

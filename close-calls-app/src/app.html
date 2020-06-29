@@ -12,7 +12,7 @@
             <div class="page-data">
                 <div class="map-info">
                     <span if.bind="isLoading" class="loading-text">Loading...</span>
-                    Found ${planes.length} close calls ${mode}. Click on a callsign or marker to see its expanded track. Click anywhere on the map to reset.
+                    Found ${planes.length} close calls ${mode}. Click on a callsign or marker to load its full track. Click anywhere on the map to reset. Click on a Reg. to look up that plane in the OpenSky database.
                     <div class="data-select">
                         Data source:
                         <select value.bind="selectedOption" change.delegate="refreshPlanes()" >
@@ -20,7 +20,8 @@
                                 ${option.name} 
                             </option>
                         </select>
-                        <button class="btn btn-sm btn-primary float-right" click.delegate="clearPlanes()">clear data</button>
+                        <button class="btn btn-sm btn-warning float-right" click.delegate="clearPlanes()">clear data</button>
+                        <button class="btn btn-sm btn-primary float-right" click.delegate="getAllHighAlt()">load worldwide high altitude</button>
                         <form submit.delegate="getPlaneByCall()">
                             <input class="text" value.bind="lookup" blur.trigger="getPlaneByCall()" placeholder="lookup callsign or ICAO"></input>
                         </form>
@@ -29,10 +30,14 @@
                 <div class="plane-table">
                     <table class="table">
                         <tr>
-                            <th class="blue">Plane 1</th>
+                            <th class="blue">Call 1</th>
+                            <th class="blue">Reg. 1</th>
                             <th class="blue">Alt (ft)</th>
-                            <th class="red">Plane 2</th>
+                            <th class="blue">Type</th>
+                            <th class="red">Call 2</th>
+                            <th class="red">Reg. 2</th>
                             <th class="red">Alt (ft)</th>
+                            <th class="red">Type</th>
                             <th>Position</th>
                             <th>Distance (meters)</th>
                             <th>Alt. Difference (feet)</th>
@@ -40,10 +45,14 @@
                             <th>Points</th>
                         </tr>
                         <tr repeat.for="plane of planes">
-                            <td class="link-style" click.delegate="getPlaneHistory(plane)">${plane.Call} (${plane.Reg})</td>
+                            <td class="link-style" click.delegate="getPlaneHistory(plane)">${plane.Call} <i class="fas fa-map-marker-alt"></i></td>
+                            <td><a href="https://opensky-network.org/aircraft-profile?icao24=${plane.Reg}" target=_BLANK>${plane.Reg} <i class="fas fa-external-link-square-alt"></i></a></td>
                             <td>${plane.Alt}</td>
-                            <td>${plane._Call} (${plane._Reg})</td>
+                            <td>${plane.Type}</td>
+                            <td class="link-style" click.delegate="getPlaneHistory(plane)">${plane._Call} <i class="fas fa-map-marker-alt"></i></td>
+                            <td><a href="https://opensky-network.org/aircraft-profile?icao24=${plane._Icao}" target=_BLANK>${plane._Reg} <i class="fas fa-external-link-square-alt"></i></a></td>
                             <td>${plane._Alt}</td>
+                            <td>${plane._Type}</td>
                             <td class="link-style" click.delegate="setLatLong(plane.Lat, plane.Long)">${plane.Lat.toFixed(4)}, ${plane.Long.toFixed(4)}</td>
                             <td>${plane.Distance}</td>
                             <td>${plane.Alt_Diff}</td>

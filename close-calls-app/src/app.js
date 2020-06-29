@@ -23,12 +23,13 @@ export class App {
 
     async created() {
         this.dataOptions = [
-            {name: 'All', value: 'all'},
-            {name: '5-1-2018', value: '2018-05-01'},
+            {name: '1-1-2020', value: '2020-01-01'},
             {name: '11-1-2019', value: '2019-11-01'},
-            {name: '1-1-2020', value: '2020-01-01'}
+            {name: '6-1-2019', value: '2019-6-01'},
+            {name: '5-1-2018', value: '2018-05-01'},
+            {name: 'All', value: 'all'}
         ];
-        this.selectedOption = {name: 'All', value: 'all'};
+        this.selectedOption = {name: '1-1-2020', value: '2020-01-01'};
         this.refreshPlanes();
     }
 
@@ -79,7 +80,7 @@ export class App {
             plane.longitude = plane.Long;
             plane.Distance = Math.round(plane.Distance * 1000);
             plane.title = plane.Call ? plane.Call : plane.Reg
-            plane.time = moment.unix(plane.PosTime).format('lll');
+            plane.time = moment.unix(plane.PosTime).format('M/D/YY HH:mm:ss');
             plane.icon = {path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, rotation: plane.Trak, strokeColor: "blue", scale: 2};
 
             otherPlane.title = plane._Call ? plane._Call : plane._Reg
@@ -112,12 +113,15 @@ export class App {
             
         let points = await this.api.call("getPlaneHistory", { icao1, icao2 });
         this.isLoading = false;
+        this.mode = `between ${plane.Reg} and ${plane._Reg}`;
+        this.lookup = "";
         this.setUpMarkers(points);
         this.setLatLong(plane.latitude, plane.longitude);
     }
 
     async getPlaneByCall() {
         let call = this.lookup;
+        this.mode = `with ${call} around the world`;
         this.isLoading = true;
         let points = await this.api.call("getPlaneByCall", { call });
         this.isLoading = false;
@@ -132,6 +136,7 @@ export class App {
     }
 
     handleMapClick(event) {
+        this.lookup = "";
         let latLng = event.detail.latLng;
         this.latitude = latLng.lat();
         this.longitude = latLng.lng();
@@ -139,7 +144,16 @@ export class App {
         this.refreshPlanes();
     }
 
+    async getAllHighAlt() {
+        this.isLoading = true;
+        this.mode = "worldwide at flight level (above 18,000ft)";
+        let points = await this.api.call("getAllHighAlt", {});
+        this.isLoading = false;
+        this.setUpMarkers(points);
+    }
+
     handleMarkerClick(event) {
+        this.lookup = "";
         console.log(event);
         let plane = event.detail.marker;
         this.getPlaneHistory(plane);

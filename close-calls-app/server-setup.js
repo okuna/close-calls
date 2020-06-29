@@ -35,7 +35,7 @@ module.exports = function(app, server, compiler) {
         let lonUpper = lon + 1;
         let lonLower = lon - 1;
         console.log(lat, lon, time);
-        let query = connection.query('SELECT *, COUNT(*) as NumPoints FROM close_calls WHERE (close_calls.Lat BETWEEN ? and ?) and (close_calls.Long BETWEEN ? and ?) and (close_calls.PosTime BETWEEN ? and ?) GROUP BY Icao, _Icao ORDER BY `Distance` ASC LIMIT 10000', [latLower, latUpper, lonLower, lonUpper, startTime, endTime],(error, results, fields) => {
+        let query = connection.query('SELECT *, COUNT(*) as NumPoints FROM close_calls WHERE (`Lat` BETWEEN ? and ?) and (`Long` BETWEEN ? and ?) and (`PosTime` BETWEEN ? and ?) GROUP BY `Icao`, `_Icao` ORDER BY `Distance` ASC LIMIT 10000', [latLower, latUpper, lonLower, lonUpper, startTime, endTime],(error, results, fields) => {
         //let query = connection.query('SELECT *, COUNT(*) as NumPoints FROM close_calls GROUP BY Icao, _Icao ORDER BY `Distance` ASC LIMIT 10000', (error, results, fields) => {
             if (error) next(error);
             res.send(results);
@@ -60,6 +60,12 @@ module.exports = function(app, server, compiler) {
             res.send(results);
         });
         console.log(query.sql);
+    });
+
+    app.post('/api/getAllHighAlt', (req, res, next) => {
+        let query = connection.query('SELECT *, COUNT(*) as NumPoints FROM close_calls WHERE `Alt` > 18000 GROUP BY `Icao`, `_Icao` ORDER BY `Distance` ASC', (error, results, fields) => {
+            res.send(results);
+        });
     });
 }
 

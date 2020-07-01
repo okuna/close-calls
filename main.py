@@ -79,7 +79,7 @@ def explodeCosArr(row):
             
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: main <file>", file=sys.stderr)
+        print("Usage: main <YYYY-MM-DD>", file=sys.stderr)
         sys.exit(-1)
 
     spark = SparkSession\
@@ -89,22 +89,25 @@ if __name__ == "__main__":
 
     #register UDF 
     udfCalcDistance = PY.udf(calcDistance, DoubleType())
-    startDate = datetime.datetime(2019, 11, 1, 0, 0)
-    endDate = datetime.datetime(2019, 11, 1, 23, 59)
+    try:
+        date = datetime.datetime.strptime(sys.argv[1], "%Y-%m-%d")
+    except ValueError:
+        print("Error parsing date: " + date)
+        sys.exit()
+    startDate = date;
+    endDate = date + datetime.timedelta(days=1)
     minute = datetime.timedelta(minutes = 1)
-
 
     while startDate < endDate:
         startDate += minute
-        url = "s3a://radar-data/2019-11-01/" + startDate.strftime("%Y-%m-%d-%H%M") + "Z.json"
-        print("     !***** " + url)
+        url = "s3a://radar-data/" + startDate.strftime("%Y-%m-%d/%Y-%m-%d-%H%M") + "Z.json"
+        print("     !***** loading: " + url)
         #read main files
         try: 
             df = spark.read.json(url, multiLine=True).select('acList')
-        except AnalysisException:
+        except Exception:
             print ("     !~***** broken file:" + url)
             continue
-        #df = spark.read.json(sys.argv[1], multiLine=True).select('acList')
         airportAltDf = spark.read.json('s3a://radar-data/airportsLatLon.json')
 
         df = df.select(PY.explode("acList").alias("tmp")).select("tmp.*")\

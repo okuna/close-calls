@@ -99,7 +99,6 @@ if __name__ == "__main__":
     minute = datetime.timedelta(minutes = 1)
 
     while startDate < endDate:
-        startDate += minute
         url = "s3a://radar-data/" + startDate.strftime("%Y-%m-%d/%Y-%m-%d-%H%M") + "Z.json"
         print("     !***** loading: " + url)
         #read main files
@@ -108,12 +107,12 @@ if __name__ == "__main__":
         except Exception:
             print ("     !~***** broken file:" + url)
             continue
+        startDate += minute
+        #load dataframe of airport elevations
         airportAltDf = spark.read.json('s3a://radar-data/airportsLatLon.json')
-
         df = df.select(PY.explode("acList").alias("tmp")).select("tmp.*")\
                 .select("Icao", "Reg", "Call", "Cos", "Alt", "Lat", "Long", "PosTime", "Trak", "Spd", "From", "To", "Type") \
                 .dropna("any", None, ["Icao", "Reg", "Alt", "Lat", "Long", "PosTime", "Cos"])\
-
         #expand Cos position into rows
         expandedMap = df.rdd.repartition(64).flatMap(explodeCosArr);
 
@@ -133,18 +132,19 @@ if __name__ == "__main__":
                 & (PY.abs(d1.Alt - d2._Alt) < 1000)\
                 & (d1.Lat < d2._Lat)\
                 & (d1.Icao != d2._Icao)), 'inner')
+        #filter to get close calls within 1km
         joined_df = joined_df\
             .withColumn("Alt_Diff", (PY.abs(PY.col('Alt') - PY.col('_Alt'))))\
             .withColumn("Distance", udfCalcDistance( PY.col('Lat'), PY.col('Long'), PY.col('_Lat'), PY.col('_Long') ) )\
             .filter(PY.col("Distance") < 1)
 
-        #self-join to detect when close call is .1 deg (~11km) away from airport
+        #self-join to detect when close call is .1 deg (~11km) away from airport and near ground
         closeAirportDf = joined_df.join(airportAltDf,
                  ((PY.abs(joined_df.Lat - airportAltDf.lat) <= .1)\
                 & (PY.abs(joined_df.Long - airportAltDf.lon) <= .1)\
                 & (joined_df.Alt - airportAltDf.elevation <= 2000)), 'inner')
         
-        #left anti join to remove close calls near airport
+        #left anti join to remove planes at airport
         joined_df = joined_df.join(closeAirportDf,
                 ((joined_df.Icao == closeAirportDf.Icao)\
                 &(joined_df._Icao == closeAirportDf._Icao)\

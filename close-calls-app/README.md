@@ -1,4 +1,6 @@
-# `close-calls-app`
+# `Close Calls Aurelia App`
+
+![image](static/screenshot.png)
 
 This project is bootstrapped by [aurelia-cli](https://github.com/aurelia/cli).
 For more information, go to https://aurelia.io/docs/cli/webpack
@@ -7,8 +9,7 @@ For more information, go to https://aurelia.io/docs/cli/webpack
 
 Run `npm start`, then open `http://localhost:8080`
 
-The MYSQL server must also be running. In this directory, create a `mysql-config.js` file containing the following: 
-
+The MySQL server must also be running. To allow the app to talk to MySQL, create a `mysql-config.js` file in this directory containing the following: 
 
     module.exports = {
         username: 'USERNAME',

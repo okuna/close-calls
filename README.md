@@ -18,7 +18,7 @@ To run the Spark job against data already inside of S3, use `RunSpark.sh <YYYY-M
 
 You can also install Airflow and modify `airflow/dags/sparkjob.py` in order to have the process run automatically. 
 
-To install the frontend application, set up a server with MySql and Node. Then `npm i` and run the Aurelia frontend with `au run`. For more information, see the [readme](close-calls-app/readme.md).
+To install the frontend application, set up a server with MySql and Node. Then `npm i` and run the Aurelia frontend with `au run`. For more information, see the [readme](close-calls-app/README.md).
 
 ## Architecture
 

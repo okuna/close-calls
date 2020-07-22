@@ -33,3 +33,17 @@ The data is organized by day, and is broken into 1440 files (one per minute). Ea
 ## Engineering challenges
 
 The biggest engineering challenge was finding an efficient way to detect close calls. 
+
+## File Descriptions
+
+`DownloadAndUnzip.sh` Shell script to download data from ADSBexchange.com, unzip it, upload the unzipped files to S3, and then run `RunSpark.sh`.
+
+`RunSpark.sh` Shell script to run `main.py` with correct command line arguments. 
+
+`main.py` Main Spark job to download data from S3, analyze it for close calls, and upload to MySQL
+
+`airportsLatLon.json` File containing the locations of the worlds' airports. Used to remove close calls on the ground. 
+
+`close-calls-app` Webapp for visualization 
+
+`airflow` Airflow job to automate processing of data

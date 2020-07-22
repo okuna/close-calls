@@ -1,4 +1,4 @@
-# `Close Calls Aurelia App`
+# `Close Calls App`
 
 ![image](static/screenshot.png)
 

@@ -1,33 +1,31 @@
 # `close-calls-app`
 
 This project is bootstrapped by [aurelia-cli](https://github.com/aurelia/cli).
-
 For more information, go to https://aurelia.io/docs/cli/webpack
 
 ## Run dev app
 
 Run `npm start`, then open `http://localhost:8080`
 
-You can change the standard webpack configurations from CLI easily with something like this: `npm start -- --open --port 8888`. However, it is better to change the respective npm scripts or `webpack.config.js` with these options, as per your need.
+The MYSQL server must also be running. In this directory, create a `mysql-config.js` file containing the following: 
 
-To enable Webpack Bundle Analyzer, do `npm run analyze` (production build).
+`
+module.exports = {
+	username: 'USERNAME',
+	password: 'PASSWORD'
+}
+`
 
-To enable hot module reload, do `npm start -- --hmr`.
+## Run for production
 
-To change dev server port, do `npm start -- --port 8888`.
+[Install PM2](https://pm2.keymetrics.io). Then, `pm2 start aurelia -- run`. This will start the server running on port 8080. To forward to port 80, I used nginx. Edit the nginx config file to proxy to port 80: 
 
-To change dev server host, do `npm start -- --host 127.0.0.1`
-
-**PS:** You could mix all the flags as well, `npm start -- --host 127.0.0.1 --port 7070 --open --hmr`
-
-For long time aurelia-cli user, you can still use `au run` with those arguments like `au run --env prod --open --hmr`. But `au run` now simply executes `npm start` command.
-
-## Build for production
-
-Run `npm run build`, or the old way `au build --env prod`.
-
-## Unit tests
-
-Run `au test` (or `au jest`).
-
-To run in watch mode, `au test --watch` or `au jest --watch`.
+`
+server {
+    ...
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+    }
+    ...
+}
+`
